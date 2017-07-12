@@ -1,10 +1,12 @@
-from irc import *
-import pickle,random,sys,os
+import pickle,random,sys,socket
+
+# Markov Chain methods
 def nextword(a):
+    print 'a is ' + a
     if a in successorlist:
         return random.choice(successorlist[a])
     else:
-        return 'the'
+        return ':^)'
 
 def learn(argfile):
     b=open(argfile)
@@ -25,7 +27,28 @@ def learn(argfile):
     a=open('lexicon','wb')
     pickle.dump(follow,a,2)
     a.close()
+    
+# IRC methods
+irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+def send(chan, msg):
+    irc.send("PRIVMSG " + chan + " :" + msg + "\n")
+        
+def connect(server, channel, botnick):
+    #defines the socket
+    print "connecting to: " + server
+    irc.connect((server, 6667)) #connects to the server
+    irc.send("USER " + botnick + " " + botnick + " " + botnick + " :This is a fun bot!\n") #user authentication
+    irc.send("NICK " + botnick + "\n")
+    irc.send("JOIN " + channel + "\n") #join the chan
+    
+def get_text():
+    text=irc.recv(2048)  #receive the text
+    if text.find('PING') != -1:
+        irc.send('PONG ' + text.split() [1] + '\n')
+    return text
 
+# Main
 if len(sys.argv)==3 and sys.argv[1]=="-l":
     learn(sys.argv[2])
 else:
@@ -37,24 +60,33 @@ else:
     server = "chat.freenode.net"
     nickname = "leebow"
 
-    irc = IRC()
-    irc.connect(server, channel, nickname)
+    connect(server, channel, nickname)
 
-    while True:
-        text = irc.get_text()
+    text = "";
+    while text != ":Abbott!~Abbott@unaffiliated/abbott PRIVMSG leebow :go away\n":
+        print 'text compare:\n' + ":Abbott!~Abbott@unaffiliated/abbott PRIVMSG leebow :go away\n" + text + '\n'
+        print text == ":Abbott!~Abbott@unaffiliated/abbott PRIVMSG leebow :go away\n"
+        text = get_text()
         if text:
             print text
         
-        if "PRIVMSG" in text and "Abbott" in text and "hello" in text:        
+        if "PRIVMSG" in text and "Abbott" in text:        
             speech=text
             s=random.choice(speech.split())
             response=''
             while True:
-                neword=nextword(s)
-                response+=' '+neword
+                #neword=nextword(s)
+                print 's is ' + s
+                if s in successorlist and successorlist[s]:
+                    neword = random.choice(successorlist[s])
+                else:
+                    neword = ':^)'
+
+                response+=neword
                 s=neword
-                if neword[-1] in ',?!.':
+                if neword[-1] in ',?!.)':
                     break
+                else:
+                    response+=' '
             print response
-            irc.send("Abbott", response)
-                    
+            send("Abbott", response)
