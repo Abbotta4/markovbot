@@ -1,3 +1,5 @@
 lexicon
 *.log
 notes
+*~
+\#*\#
