@@ -63,9 +63,7 @@ else:
     connect(server, channel, nickname)
 
     text = "";
-    while text != ":Abbott!~Abbott@unaffiliated/abbott PRIVMSG leebow :go away\n":
-        print 'text compare:\n' + ":Abbott!~Abbott@unaffiliated/abbott PRIVMSG leebow :go away\n" + text + '\n'
-        print text == ":Abbott!~Abbott@unaffiliated/abbott PRIVMSG leebow :go away\n"
+    while text != ":Abbott!~Abbott@unaffiliated/abbott PRIVMSG leebow :go away\r\n":
         text = get_text()
         if text:
             print text
