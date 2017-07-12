@@ -1,4 +1,5 @@
-import pickle,random,sys
+from irc import *
+import pickle,random,sys,os
 def nextword(a):
     if a in successorlist:
         return random.choice(successorlist[a])
@@ -32,15 +33,28 @@ else:
     successorlist=pickle.load(a)
     a.close()
 
-    speech=''
-    while speech!='quit':
-        speech=raw_input('>')
-        s=random.choice(speech.split())
-        response=''
-        while True:
-            neword=nextword(s)
-            response+=' '+neword
-            s=neword
-            if neword[-1] in ',?!.':
-                break
-        print response
+    channel = "#anoo"
+    server = "chat.freenode.net"
+    nickname = "leebow"
+
+    irc = IRC()
+    irc.connect(server, channel, nickname)
+
+    while True:
+        text = irc.get_text()
+        if text:
+            print text
+        
+        if "PRIVMSG" in text and "Abbott" in text and "hello" in text:        
+            speech=text
+            s=random.choice(speech.split())
+            response=''
+            while True:
+                neword=nextword(s)
+                response+=' '+neword
+                s=neword
+                if neword[-1] in ',?!.':
+                    break
+            print response
+            irc.send("Abbott", response)
+                    
