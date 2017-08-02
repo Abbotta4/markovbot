@@ -1,7 +1,7 @@
 #!/usr/bin/python
-import pickle,random,sys,socket,re
+import pickle,random,sys,socket,re,psycopg2,json
 
-# Markov Chain methods
+# Pickle learn
 def learn(argfile):
     b=open(argfile)
     c = r'\[\d\d:\d\d:\d\d\] <.+> '
@@ -11,7 +11,7 @@ def learn(argfile):
         if s is not None:
             line = re.sub(c, '', s.group(0));
             for word in line.split():
-                text.append (word)
+                text.append(word)
     b.close()
     textset=list(set(text))
     follow={}
@@ -25,7 +25,49 @@ def learn(argfile):
     a=open('lexicon','wb')
     pickle.dump(follow,a,2)
     a.close()
-    
+
+# PostgreSQL learn
+def learn2(argfile, conn):
+    cursor = conn.cursor()
+    b=open(argfile)
+    c = r'\[\d\d:\d\d:\d\d\] <.+> '
+    for line in b:
+        text = []
+        s = re.search(c + '.+', line)
+        if s is not None:
+            line = re.sub(c, '', s.group(0));
+            for word in line.split():
+                text.append(word)
+        # Insert into DB
+        for index, word in enumerate(text):
+            print word + ' ' + str(len(text))
+            cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
+            f = cursor.fetchall()
+            if not f:
+                cursor.execute("""INSERT INTO markov (word, freq, next, total) VALUES ( %s, 0, '{}', 0)""", (word, ))
+                cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
+                f = cursor.fetchall()
+            print f
+            ff = list(f[0])
+            if index is 0: # If the first word, then add to freq
+                ff[1] += 1
+                cursor.execute("""UPDATE markov SET freq = %d WHERE word = %s""", (ff[1], word))
+            j = ff[2]
+            if index is len(text) - 1: # If it's the last word, set the next word to NULL
+                if not None in j:
+                    j[None] = 0
+                j[None] += 1
+            else: # If it precedes another word
+                n = text[index + 1]
+                if not n in j:
+                    j[n] = 0
+                j[n] += 1
+            cursor.execute("""UPDATE markov SET next = %s WHERE word = %s""", (json.dumps(j), word))
+    cursor.execute("""INSERT INTO filenames (filename) VALUES (%s)""", (argfile, ))
+    conn.commit()
+    cursor.close()
+    b.close()
+                
 # IRC methods
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
@@ -50,6 +92,18 @@ def get_text():
 if len(sys.argv)==3 and sys.argv[1]=="-l":
     learn(sys.argv[2])
 else:
+    #Define our connection string
+    conn_string = "host='localhost' dbname='testdb' user='postgres' password='postgres'"
+    # print the connection string we will use to connect
+    print "Connecting to database\n->%s" % (conn_string)
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = psycopg2.connect(conn_string)
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    #cursor = conn.cursor()
+    #print "Connected!\n"
+
+    '''
+    
     a=open('lexicon','rb')
     successorlist=pickle.load(a)
     a.close()
@@ -85,3 +139,6 @@ else:
                     response+=' '
             print response
             send("Abbott", response)
+'''
+    learn2(sys.argv[2], conn)
+    conn.close()
