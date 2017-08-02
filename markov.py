@@ -1,19 +1,17 @@
-import pickle,random,sys,socket
+#!/usr/bin/python
+import pickle,random,sys,socket,re
 
 # Markov Chain methods
-def nextword(a):
-    print 'a is ' + a
-    if a in successorlist:
-        return random.choice(successorlist[a])
-    else:
-        return ':^)'
-
 def learn(argfile):
     b=open(argfile)
+    c = r'\[\d\d:\d\d:\d\d\] <.+> '
     text=[]
     for line in b:
-        for word in line.split():
-            text.append (word)
+        s = re.search(c + '.+', line)
+        if s is not None:
+            line = re.sub(c, '', s.group(0));
+            for word in line.split():
+                text.append (word)
     b.close()
     textset=list(set(text))
     follow={}
@@ -74,7 +72,6 @@ else:
             response=''
             while True:
                 #neword=nextword(s)
-                print 's is ' + s
                 if s in successorlist and successorlist[s]:
                     neword = random.choice(successorlist[s])
                 else:
