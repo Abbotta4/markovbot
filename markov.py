@@ -1,33 +1,8 @@
 #!/usr/bin/python
-import pickle,random,sys,socket,re,psycopg2,json
-
-# Pickle learn
-def learn(argfile):
-    b=open(argfile)
-    c = r'\[\d\d:\d\d:\d\d\] <.+> '
-    text=[]
-    for line in b:
-        s = re.search(c + '.+', line)
-        if s is not None:
-            line = re.sub(c, '', s.group(0));
-            for word in line.split():
-                text.append(word)
-    b.close()
-    textset=list(set(text))
-    follow={}
-    for l in range(len(textset)):
-        working=[]
-        check=textset[l]
-        for w in range(len(text)-1):
-            if check==text[w] and text[w][-1] not in '(),.?!':
-                working.append(str(text[w+1]))
-        follow[check]=working
-    a=open('lexicon','wb')
-    pickle.dump(follow,a,2)
-    a.close()
+import random,sys,socket,re,psycopg2,json
 
 # PostgreSQL learn
-def learn2(argfile, conn):
+def learn(argfile, conn):
     cursor = conn.cursor()
     b=open(argfile)
     c = r'\[\d\d:\d\d:\d\d\] <.+> '
@@ -44,7 +19,7 @@ def learn2(argfile, conn):
             cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
             f = cursor.fetchall()
             if not f:
-                cursor.execute("""INSERT INTO markov (word, freq, next, total) VALUES ( %s, 0, '{}', 0)""", (word, ))
+                cursor.execute("""INSERT INTO markov (word, freq, next, total) VALUES ( %s, 0, '{"null": 1}', 0)""", (word, ))
                 cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
                 f = cursor.fetchall()
             print f
@@ -89,25 +64,22 @@ def get_text():
     return text
 
 # Main
-if len(sys.argv)==3 and sys.argv[1]=="-l":
-    learn(sys.argv[2])
-else:
-    '''
-    #Define our connection string
-    conn_string = "host='localhost' dbname='testdb' user='postgres' password='postgres'"
-    # print the connection string we will use to connect
-    print "Connecting to database\n->%s" % (conn_string)
-    # get a connection, if a connect cannot be made an exception will be raised here
-    conn = psycopg2.connect(conn_string)
-    # conn.cursor will return a cursor object, you can use this cursor to perform queries
-    #cursor = conn.cursor()
-    #print "Connected!\n"
-    '''
-    
-    a=open('lexicon','rb')
-    successorlist=pickle.load(a)
-    a.close()
 
+#Define our connection string
+conn_string = "host='localhost' dbname='testdb' user='postgres' password='postgres'"
+# print the connection string we will use to connect
+print "Connecting to database\n->%s" % (conn_string)
+# get a connection, if a connect cannot be made an exception will be raised here
+conn = psycopg2.connect(conn_string)
+# conn.cursor will return a cursor object, you can use this cursor to perform queries
+#cursor = conn.cursor()
+#print "Connected!\n"
+
+if len(sys.argv)==3 and sys.argv[1]=="-l":
+    learn(sys.argv[2], conn)
+else:
+    cursor = conn.cursor()
+#''' for local testing
     channel = "#anoo"
     server = "chat.freenode.net"
     nickname = "leebow"
@@ -120,22 +92,21 @@ else:
         if text:
             print text
         
-        if "PRIVMSG" in text and "Abbott" in text:        
-            speech=text
-            s=random.choice(speech.split())
-            response=''
+        if "PRIVMSG" in text and "Abbott" in text:
+#''' for local testing
+            cursor.execute("""SELECT word FROM markov""")
+            r = str(random.choice(cursor.fetchall())[0])
+            response = r
+            print 'response is ' + r
             while True:
-                #neword=nextword(s)
-                if s in successorlist and successorlist[s]:
-                    neword = random.choice(successorlist[s])
-                else:
-                    neword = ':^)'
-
-                response+=neword
-                s=neword
-                if neword[-1] in ',?!.)':
+                cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
+                r = random.choice(cursor.fetchall()[0][0].keys())
+                if str(r) == 'null':
+                    #if r == None:
                     break
                 else:
-                    response+=' '
+                    r = str(r)
+                    response += ' ' + r
             print response
-            send("Abbott", response)
+            send("Abbott", response) #comment for local testing
+    conn.close()
