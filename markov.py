@@ -51,7 +51,7 @@ def learn2(argfile, conn):
             ff = list(f[0])
             if index is 0: # If the first word, then add to freq
                 ff[1] += 1
-                cursor.execute("""UPDATE markov SET freq = %d WHERE word = %s""", (ff[1], word))
+                cursor.execute("""UPDATE markov SET freq = %s WHERE word = %s""", (ff[1], word))
             j = ff[2]
             if index is len(text) - 1: # If it's the last word, set the next word to NULL
                 if not None in j:
@@ -63,7 +63,7 @@ def learn2(argfile, conn):
                     j[n] = 0
                 j[n] += 1
             cursor.execute("""UPDATE markov SET next = %s WHERE word = %s""", (json.dumps(j), word))
-    cursor.execute("""INSERT INTO filenames (filename) VALUES (%s)""", (argfile, ))
+    cursor.execute("""INSERT INTO logfiles (filename) VALUES (%s)""", (argfile, ))
     conn.commit()
     cursor.close()
     b.close()
