@@ -64,17 +64,11 @@ def get_text():
     return text
 
 # Main
-
-#Define our connection string
 conn_string = "host='localhost' dbname='testdb' user='postgres' password='postgres'"
-# print the connection string we will use to connect
 print "Connecting to database\n->%s" % (conn_string)
-# get a connection, if a connect cannot be made an exception will be raised here
 conn = psycopg2.connect(conn_string)
-# conn.cursor will return a cursor object, you can use this cursor to perform queries
-#cursor = conn.cursor()
-#print "Connected!\n"
-
+print "Connected!\n"
+    
 if len(sys.argv)==3 and sys.argv[1]=="-l":
     learn(sys.argv[2], conn)
 else:
@@ -97,7 +91,6 @@ else:
             cursor.execute("""SELECT word FROM markov""")
             r = str(random.choice(cursor.fetchall())[0])
             response = r
-            print 'response is ' + r
             while True:
                 cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
                 r = random.choice(cursor.fetchall()[0][0].keys())
