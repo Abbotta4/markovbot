@@ -4,3 +4,8 @@ notes
 *~
 \#*\#
 *.pyc
+bin/
+include/
+lib/
+local/
+share/

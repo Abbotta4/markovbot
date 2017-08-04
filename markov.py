@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 import random,sys,socket,re,psycopg2,json
 
 # PostgreSQL learn
@@ -73,7 +73,7 @@ if len(sys.argv)==3 and sys.argv[1]=="-l":
     learn(sys.argv[2], conn)
 else:
     cursor = conn.cursor()
-#''' for local testing
+''' for local testing
     channel = "#anoo"
     server = "chat.freenode.net"
     nickname = "leebow"
@@ -87,19 +87,19 @@ else:
             print text
         
         if "PRIVMSG" in text and "Abbott" in text:
-#''' for local testing
-            cursor.execute("""SELECT word FROM markov""")
-            r = str(random.choice(cursor.fetchall())[0])
-            response = r
-            while True:
-                cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
-                r = random.choice(cursor.fetchall()[0][0].keys())
-                if str(r) == 'null':
-                    #if r == None:
-                    break
-                else:
-                    r = str(r)
-                    response += ' ' + r
-            print response
-            send("Abbott", response) #comment for local testing
-    conn.close()
+''' #for local testing
+cursor.execute("""SELECT word FROM markov""")
+r = str(random.choice(cursor.fetchall())[0])
+response = r
+while True:
+    cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
+    r = random.choice(cursor.fetchall()[0][0].keys())
+    if str(r) == 'null':
+        #if r == None:
+        break
+    else:
+        r = str(r)
+        response += ' ' + r
+    print response
+    send("Abbott", response) #comment for local testing
+conn.close()
