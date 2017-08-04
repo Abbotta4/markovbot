@@ -92,6 +92,7 @@ def get_text():
 if len(sys.argv)==3 and sys.argv[1]=="-l":
     learn(sys.argv[2])
 else:
+    '''
     #Define our connection string
     conn_string = "host='localhost' dbname='testdb' user='postgres' password='postgres'"
     # print the connection string we will use to connect
@@ -101,7 +102,6 @@ else:
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
     #cursor = conn.cursor()
     #print "Connected!\n"
-
     '''
     
     a=open('lexicon','rb')
@@ -139,6 +139,3 @@ else:
                     response+=' '
             print response
             send("Abbott", response)
-'''
-    learn2(sys.argv[2], conn)
-    conn.close()
