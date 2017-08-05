@@ -42,7 +42,17 @@ def learn(argfile, conn):
     conn.commit()
     cursor.close()
     b.close()
-                
+
+def weighted_choice(choices):
+    total = sum(choices.values())
+    r = random.uniform(0, total)
+    upto = 0
+    for c in choices:
+        if upto + choices.get(c) >= r:
+            return c
+        upto += choices.get(c)
+    assert False, "Shouldn't get here"
+                                            
 # IRC methods
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
@@ -93,7 +103,8 @@ else:
     response = r
     while True:
         cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
-        r = random.choice(cursor.fetchall()[0][0].keys())
+        #r = random.choice(cursor.fetchall()[0][0].keys())
+        r = weighted_choice(cursor.fetchall()[0][0])
         if str(r) == 'null':
             #if r == None:
             break
