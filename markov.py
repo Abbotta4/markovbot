@@ -103,4 +103,3 @@ else:
     print response
     #send("Abbott", response) #comment for local testing
     conn.close()
-            
