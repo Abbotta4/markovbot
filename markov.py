@@ -19,7 +19,7 @@ def learn(argfile, conn):
             cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
             f = cursor.fetchall()
             if not f:
-                cursor.execute("""INSERT INTO markov (word, freq, next, total) VALUES ( %s, 0, '{"null": 1}', 0)""", (word, ))
+                cursor.execute("""INSERT INTO markov (word, freq, next, total) VALUES ( %s, %d, '', 0)""", (word, 1 if index == 0 else 0))
                 cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
                 f = cursor.fetchall()
             print f
@@ -47,12 +47,12 @@ def weighted_choice(choices):
     total = sum(choices.values())
     r = random.uniform(0, total)
     upto = 0
-    for c in choices:
-        if upto + choices.get(c) >= r:
-            return c
-        upto += choices.get(c)
+    for f in choices.items():
+        if upto + f[1] >= r:
+            return f[0]
+        upto += f[1]
     assert False, "Shouldn't get here"
-                                            
+        
 # IRC methods
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
@@ -74,7 +74,7 @@ def get_text():
     return text
 
 # Main
-conn_string = "host='localhost' dbname='testdb' user='postgres' password='postgres'"
+conn_string = "host='localhost' port=8000 dbname='testdb' user='postgres' password='postgres'"
 print "Connecting to database\n->%s" % (conn_string)
 conn = psycopg2.connect(conn_string)
 print "Connected!\n"
@@ -98,12 +98,12 @@ else:
         
         if "PRIVMSG" in text and "Abbott" in text:
     ''' #for local testing
-    cursor.execute("""SELECT word FROM markov""")
-    r = str(random.choice(cursor.fetchall())[0])
+    cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
+    #r = str(random.choice(cursor.fetchall())[0])
+    r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
     response = r
     while True:
         cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
-        #r = random.choice(cursor.fetchall()[0][0].keys())
         r = weighted_choice(cursor.fetchall()[0][0])
         if str(r) == 'null':
             #if r == None:
