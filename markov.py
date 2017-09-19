@@ -125,8 +125,8 @@ if len(sys.argv)==2 and sys.argv[1]=="-i":
                 else:
                     r = str(r)
                     response += ' ' + r
-    print response
-    send(irc, "Abbott", response)
+            print response
+            send(irc, "Abbott", response)
     conn.close()
 else:
     print('USAGE: python markov.py [OPTION] [ARGUMENT]\n\nOptions:\n-l: learn a file\n-t: telegram\n-i: irc')
