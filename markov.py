@@ -1,5 +1,8 @@
 #!/usr/bin/env python2
-import random,sys,socket,re,psycopg2,json,telegram
+import random,sys,socket,re,psycopg2,json,logging
+from telegram.ext import Updater
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # PostgreSQL learn
 def learn(argfile, conn):
@@ -83,6 +86,9 @@ if len(sys.argv)==3 and sys.argv[1]=="-l":
     learn(sys.argv[2], conn)
     
 if len(sys.argv)==2 and sys.argv[1]=="-t":
+    updater = Updater(token='415135313:AAGEOslKHmSpANt_dUMRKL-SvT4Kkel12Rw')
+    dispatcher = updater.dispatcher
+    
     cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
     r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
     response = r
