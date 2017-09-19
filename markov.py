@@ -1,12 +1,12 @@
 #!/usr/bin/env python2
 import random,sys,socket,re,psycopg2,json,logging
-from telegram.ext import Updater
+from telegram.ext import Updater,MessageHandler,CommandHandler,Filters
+from telegram import MessageEntity
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # PostgreSQL learn
-def learn(argfile, conn):
-    cursor = conn.cursor()
+def learn(argfile, cursor):
     cursor.execute("""SELECT filename FROM logfiles WHERE filename = %s""", (argfile, ))
     if cursor.fetchall():
         print "%s has already been learned" % argfile
@@ -59,63 +59,69 @@ def weighted_choice(choices):
             return f[0]
         upto += f[1]
     assert False, "Shouldn't get here. (Is your database empty?)"
-       
-# IRC methods
-def send(irc, chan, msg):
-    irc.send("PRIVMSG " + chan + " :" + msg + "\n")
-        
-def connect(irc, server, channel, botnick):
-    #defines the socket
-    print "connecting to: " + server
-    irc.connect((server, 6667)) #connects to the server
-    irc.send("USER " + botnick + " " + botnick + " " + botnick + " :This is a fun bot!\n") #user authentication
-    irc.send("NICK " + botnick + "\n")
-    irc.send("JOIN " + channel + "\n") #join the chan
-    
-def get_text(irc):
-    text=irc.recv(2048)  #receive the text
-    if text.find('PING') != -1:
-        irc.send('PONG ' + text.split() [1] + '\n')
-    return text
 
 # Main
 conn_string = "host='localhost' port=5432 dbname='testdb' user='postgres' password='postgres'"
 conn = psycopg2.connect(conn_string)
+cursor = conn.cursor()
     
 if len(sys.argv)==3 and sys.argv[1]=="-l":
-    learn(sys.argv[2], conn)
+    learn(sys.argv[2], cursor)
     
 if len(sys.argv)==2 and sys.argv[1]=="-t":
     updater = Updater(token='415135313:AAGEOslKHmSpANt_dUMRKL-SvT4Kkel12Rw')
     dispatcher = updater.dispatcher
-    
-    cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
-    r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
-    response = r
-    while True:
-        cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
-        r = weighted_choice(cursor.fetchall()[0][0])
-        if str(r) == 'null':
-            break
-        else:
-            r = str(r)
-            response += ' ' + r
-    print response
-    conn.close()
+
+    def respond(bot, update):
+        cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
+        r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
+        response = r
+        while True:
+            cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
+            r = weighted_choice(cursor.fetchall()[0][0])
+            if str(r) == 'null':
+                break
+            else:
+                r = str(r)
+                response += ' ' + r
+        print response
+        bot.send_message(chat_id=update.message.chat_id, text=response)
+
+    markov_handler = MessageHandler(Filters.entity(MessageEntity.MENTION), respond)
+    dispatcher.add_handler(markov_handler)
+
+    updater.start_polling()
+    updater.idle()
     
 if len(sys.argv)==2 and sys.argv[1]=="-i":
     irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    cursor = conn.cursor()
+    
+    def send(chan, msg):
+        irc.send("PRIVMSG " + chan + " :" + msg + "\n")
+        
+    def connect(server, channel, botnick):
+        #defines the socket
+        print "connecting to: " + server
+        irc.connect((server, 6667)) #connects to the server
+        irc.send("USER " + botnick + " " + botnick + " " + botnick + " :This is a fun bot!\n") #user authentication
+        irc.send("NICK " + botnick + "\n")
+        irc.send("JOIN " + channel + "\n") #join the chan
+    
+    def get_text():
+        text=irc.recv(2048)  #receive the text
+        if text.find('PING') != -1:
+            irc.send('PONG ' + text.split() [1] + '\n')
+        return text
 
     channel = "#anoo"
     server = "chat.freenode.net"
     nickname = "leebow"
 
-    connect(irc, server, channel, nickname)
+    connect(server, channel, nickname)
 
     text = "";
     while text != ":Abbott!~Abbott@unaffiliated/abbott PRIVMSG leebow :go away\r\n":
-        text = get_text(irc)
+        text = get_text()
         if text:
             print text
         
@@ -132,7 +138,8 @@ if len(sys.argv)==2 and sys.argv[1]=="-i":
                     r = str(r)
                     response += ' ' + r
             print response
-            send(irc, "Abbott", response)
-    conn.close()
+            send("Abbott", response)
 else:
     print('USAGE: python markov.py [OPTION] [ARGUMENT]\n\nOptions:\n-l: learn a file\n-t: telegram\n-i: irc')
+
+conn.close()
