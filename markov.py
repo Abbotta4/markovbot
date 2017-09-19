@@ -19,7 +19,7 @@ def learn(argfile, conn):
             cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
             f = cursor.fetchall()
             if not f:
-                cursor.execute("""INSERT INTO markov (word, freq, next, total) VALUES ( %s, %d, '', 0)""", (word, 1 if index == 0 else 0))
+                cursor.execute("""INSERT INTO markov (word, freq, next, total) VALUES ( %s, %s, '{}', 0)""", (word, 1 if index == 0 else 0))
                 cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
                 f = cursor.fetchall()
             print f
