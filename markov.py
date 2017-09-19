@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 import random,sys,socket,re,psycopg2,json,logging
-from telegram.ext import Updater,MessageHandler,CommandHandler,Filters
-from telegram import MessageEntity
+from telegram.ext import Updater,MessageHandler,CommandHandler,Filters,BaseFilter
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -72,6 +71,11 @@ if len(sys.argv)==2 and sys.argv[1]=="-t":
     updater = Updater(token='415135313:AAGEOslKHmSpANt_dUMRKL-SvT4Kkel12Rw')
     dispatcher = updater.dispatcher
 
+    class FilterSabetsu(BaseFilter):
+        def filter(self, message):
+            return '@Sabetsu' in message.text
+    filter_sabetsu = FilterSabetsu()
+    
     def respond(bot, update):
         cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
         r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
@@ -87,7 +91,7 @@ if len(sys.argv)==2 and sys.argv[1]=="-t":
         print response
         bot.send_message(chat_id=update.message.chat_id, text=response)
 
-    markov_handler = MessageHandler(Filters.entity(MessageEntity.MENTION), respond)
+    markov_handler = MessageHandler(filter_sabetsu, respond)
     dispatcher.add_handler(markov_handler)
 
     updater.start_polling()
