@@ -4,3 +4,11 @@ notes
 *~
 \#*\#
 test.py
+*.pyc
+bin/
+include/
+lib/
+local/
+share/
+pip-selfcheck.json
+logs/

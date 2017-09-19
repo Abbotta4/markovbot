@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 import random,sys,socket,re,psycopg2,json
 
 # PostgreSQL learn
@@ -19,7 +19,7 @@ def learn(argfile, conn):
             cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
             f = cursor.fetchall()
             if not f:
-                cursor.execute("""INSERT INTO markov (word, freq, next, total) VALUES ( %s, 0, '{"null": 1}', 0)""", (word, ))
+                cursor.execute("""INSERT INTO markov (word, freq, next, total) VALUES ( %s, %d, '', 0)""", (word, 1 if index == 0 else 0))
                 cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
                 f = cursor.fetchall()
             print f
@@ -42,7 +42,17 @@ def learn(argfile, conn):
     conn.commit()
     cursor.close()
     b.close()
-                
+
+def weighted_choice(choices):
+    total = sum(choices.values())
+    r = random.uniform(0, total)
+    upto = 0
+    for f in choices.items():
+        if upto + f[1] >= r:
+            return f[0]
+        upto += f[1]
+    assert False, "Shouldn't get here"
+        
 # IRC methods
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
@@ -64,7 +74,7 @@ def get_text():
     return text
 
 # Main
-conn_string = "host='localhost' dbname='testdb' user='postgres' password='postgres'"
+conn_string = "host='localhost' port=8000 dbname='testdb' user='postgres' password='postgres'"
 print "Connecting to database\n->%s" % (conn_string)
 conn = psycopg2.connect(conn_string)
 print "Connected!\n"
@@ -73,7 +83,7 @@ if len(sys.argv)==3 and sys.argv[1]=="-l":
     learn(sys.argv[2], conn)
 else:
     cursor = conn.cursor()
-#''' for local testing
+    ''' for local testing
     channel = "#anoo"
     server = "chat.freenode.net"
     nickname = "leebow"
@@ -87,19 +97,20 @@ else:
             print text
         
         if "PRIVMSG" in text and "Abbott" in text:
-#''' for local testing
-            cursor.execute("""SELECT word FROM markov""")
-            r = str(random.choice(cursor.fetchall())[0])
-            response = r
-            while True:
-                cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
-                r = random.choice(cursor.fetchall()[0][0].keys())
-                if str(r) == 'null':
-                    #if r == None:
-                    break
-                else:
-                    r = str(r)
-                    response += ' ' + r
-            print response
-            send("Abbott", response) #comment for local testing
+    ''' #for local testing
+    cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
+    #r = str(random.choice(cursor.fetchall())[0])
+    r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
+    response = r
+    while True:
+        cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
+        r = weighted_choice(cursor.fetchall()[0][0])
+        if str(r) == 'null':
+            #if r == None:
+            break
+        else:
+            r = str(r)
+            response += ' ' + r
+    print response
+    #send("Abbott", response) #comment for local testing
     conn.close()
