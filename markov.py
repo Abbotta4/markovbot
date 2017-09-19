@@ -4,6 +4,11 @@ import random,sys,socket,re,psycopg2,json
 # PostgreSQL learn
 def learn(argfile, conn):
     cursor = conn.cursor()
+    cursor.execute("""SELECT filename FROM logfiles WHERE filename = %s""", (argfile, ))
+    if cursor.fetchall():
+        print "%s has already been learned" % argfile
+        return
+    print "learning %s" % argfile
     b=open(argfile)
     c = r'\[\d\d:\d\d:\d\d\] <.+> '
     for line in b:
@@ -11,18 +16,17 @@ def learn(argfile, conn):
         s = re.search(c + '.+', line)
         if s is not None:
             line = re.sub(c, '', s.group(0));
+            print line
             for word in line.split():
                 text.append(word)
         # Insert into DB
         for index, word in enumerate(text):
-            print word + ' ' + str(len(text))
             cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
             f = cursor.fetchall()
             if not f:
                 cursor.execute("""INSERT INTO markov (word, freq, next, total) VALUES ( %s, %s, '{}', 0)""", (word, 1 if index == 0 else 0))
                 cursor.execute("""SELECT * FROM markov WHERE word = %s""", (word, ))
                 f = cursor.fetchall()
-            print f
             ff = list(f[0])
             if index is 0: # If the first word, then add to freq
                 ff[1] += 1
@@ -74,10 +78,8 @@ def get_text():
     return text
 
 # Main
-conn_string = "host='localhost' port=8000 dbname='testdb' user='postgres' password='postgres'"
-print "Connecting to database\n->%s" % (conn_string)
+conn_string = "host='localhost' port=5432 dbname='testdb' user='postgres' password='postgres'"
 conn = psycopg2.connect(conn_string)
-print "Connected!\n"
     
 if len(sys.argv)==3 and sys.argv[1]=="-l":
     learn(sys.argv[2], conn)
@@ -99,7 +101,6 @@ else:
         if "PRIVMSG" in text and "Abbott" in text:
     ''' #for local testing
     cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
-    #r = str(random.choice(cursor.fetchall())[0])
     r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
     response = r
     while True:
