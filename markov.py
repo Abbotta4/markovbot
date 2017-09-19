@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-import random,sys,socket,re,psycopg2,json
+import random,sys,socket,re,psycopg2,json,telegram
 
 # PostgreSQL learn
 def learn(argfile, conn):
@@ -56,14 +56,12 @@ def weighted_choice(choices):
             return f[0]
         upto += f[1]
     assert False, "Shouldn't get here. (Is your database empty?)"
-        
+       
 # IRC methods
-irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
-def send(chan, msg):
+def send(irc, chan, msg):
     irc.send("PRIVMSG " + chan + " :" + msg + "\n")
         
-def connect(server, channel, botnick):
+def connect(irc, server, channel, botnick):
     #defines the socket
     print "connecting to: " + server
     irc.connect((server, 6667)) #connects to the server
@@ -71,7 +69,7 @@ def connect(server, channel, botnick):
     irc.send("NICK " + botnick + "\n")
     irc.send("JOIN " + channel + "\n") #join the chan
     
-def get_text():
+def get_text(irc):
     text=irc.recv(2048)  #receive the text
     if text.find('PING') != -1:
         irc.send('PONG ' + text.split() [1] + '\n')
@@ -83,23 +81,8 @@ conn = psycopg2.connect(conn_string)
     
 if len(sys.argv)==3 and sys.argv[1]=="-l":
     learn(sys.argv[2], conn)
-else:
-    cursor = conn.cursor()
-    ''' for local testing
-    channel = "#anoo"
-    server = "chat.freenode.net"
-    nickname = "leebow"
-
-    connect(server, channel, nickname)
-
-    text = "";
-    while text != ":Abbott!~Abbott@unaffiliated/abbott PRIVMSG leebow :go away\r\n":
-        text = get_text()
-        if text:
-            print text
-        
-        if "PRIVMSG" in text and "Abbott" in text:
-    ''' #for local testing
+    
+if len(sys.argv)==2 and sys.argv[1]=="-t":
     cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
     r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
     response = r
@@ -107,11 +90,43 @@ else:
         cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
         r = weighted_choice(cursor.fetchall()[0][0])
         if str(r) == 'null':
-            #if r == None:
             break
         else:
             r = str(r)
             response += ' ' + r
     print response
-    #send("Abbott", response) #comment for local testing
     conn.close()
+    
+if len(sys.argv)==2 and sys.argv[1]=="-i":
+    irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cursor = conn.cursor()
+
+    channel = "#anoo"
+    server = "chat.freenode.net"
+    nickname = "leebow"
+
+    connect(irc, server, channel, nickname)
+
+    text = "";
+    while text != ":Abbott!~Abbott@unaffiliated/abbott PRIVMSG leebow :go away\r\n":
+        text = get_text(irc)
+        if text:
+            print text
+        
+        if "PRIVMSG" in text and "Abbott" in text:
+            cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
+            r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
+            response = r
+            while True:
+                cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
+                r = weighted_choice(cursor.fetchall()[0][0])
+                if str(r) == 'null':
+                    break
+                else:
+                    r = str(r)
+                    response += ' ' + r
+    print response
+    send(irc, "Abbott", response)
+    conn.close()
+else:
+    print('USAGE: python markov.py [OPTION] [ARGUMENT]\n\nOptions:\n-l: learn a file\n-t: telegram\n-i: irc')
