@@ -3,6 +3,7 @@ lexicon
 notes
 *~
 \#*\#
+test.py
 *.pyc
 bin/
 include/
