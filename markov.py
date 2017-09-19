@@ -51,7 +51,7 @@ def weighted_choice(choices):
         if upto + f[1] >= r:
             return f[0]
         upto += f[1]
-    assert False, "Shouldn't get here"
+    assert False, "Shouldn't get here. (Is your database empty?)"
         
 # IRC methods
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
