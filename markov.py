@@ -143,6 +143,21 @@ if len(sys.argv)==2 and sys.argv[1]=="-i":
                     response += ' ' + r
             print response
             send("Abbott", response)
+
+if len(sys.argv)==2 and sys.argv[1]=="-n":
+    cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
+    r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
+    response = r
+    while True:
+        cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
+        r = weighted_choice(cursor.fetchall()[0][0])
+        if str(r) == 'null':
+            break
+        else:
+            r = str(r)
+            response += ' ' + r
+    print response
+            
 else:
     print('USAGE: python markov.py [OPTION] [ARGUMENT]\n\nOptions:\n-l: learn a file\n-t: telegram\n-i: irc')
 
