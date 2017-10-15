@@ -1,8 +1,17 @@
 #!/usr/bin/env python2
-import random,sys,socket,re,psycopg2,json,logging
+import random,sys,socket,re,psycopg2,json,logging,ConfigParser,io
 from telegram.ext import Updater,MessageHandler,CommandHandler,Filters,BaseFilter
 
 logging.basicConfig(format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s', level = logging.INFO)
+
+# Load the configuration file
+try:
+    with open("config.ini") as f:
+        sample_config = f.read()
+        config = ConfigParser.RawConfigParser(allow_no_value=True)
+        config.readfp(io.BytesIO(sample_config))
+except FileNotFoundError:
+    print('Could not find a config file.')
 
 # PostgreSQL learn
 def learn(argfile, cursor):
@@ -60,7 +69,12 @@ def weighted_choice(choices):
     assert False, "Shouldn't get here. (Is your database empty?)"
 
 # Main
-conn_string = "host='localhost' port=5432 dbname='testdb' user='postgres' password='postgres'"
+host = config.get('postgres', 'host')
+port = config.get('postgres', 'port')
+dbname = config.get('postgres', 'dbname')
+user = config.get('postgres', 'user')
+password = config.get('postgres', 'password')
+conn_string = 'host=' + host + ' port=' + port + ' dbname=' + dbname + ' user=' + user + ' password=' + password
 conn = psycopg2.connect(conn_string)
 cursor = conn.cursor()
     
@@ -68,7 +82,7 @@ if len(sys.argv) == 3 and sys.argv[1] == "-l":
     learn(sys.argv[2], cursor)
     
 if len(sys.argv) == 2 and sys.argv[1] == "-t":
-    updater = Updater(token = '415135313:AAGEOslKHmSpANt_dUMRKL-SvT4Kkel12Rw')
+    updater = Updater(token = config.get('telegram', 'token'))
     dispatcher = updater.dispatcher
 
     class FilterSabetsu(BaseFilter):

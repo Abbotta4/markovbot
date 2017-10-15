@@ -12,3 +12,5 @@ local/
 share/
 pip-selfcheck.json
 logs/
+*.ini
+!config.ini
