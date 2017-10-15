@@ -8,9 +8,9 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 def learn(argfile, cursor):
     cursor.execute("""SELECT filename FROM logfiles WHERE filename = %s""", (argfile, ))
     if cursor.fetchall():
-        print "%s has already been learned" % argfile
+        print("%s has already been learned", argfile)
         return
-    print "learning %s" % argfile
+    print ("learning %s", argfile)
     b=open(argfile)
     c = r'\[\d\d:\d\d:\d\d\] <.+> '
     for line in b:
@@ -18,7 +18,7 @@ def learn(argfile, cursor):
         s = re.search(c + '.+', line)
         if s is not None:
             line = re.sub(c, '', s.group(0));
-            print line
+            print(line)
             for word in line.split():
                 text.append(word)
         # Insert into DB
@@ -88,7 +88,7 @@ if len(sys.argv)==2 and sys.argv[1]=="-t":
             else:
                 r = str(r)
                 response += ' ' + r
-        print response
+        print(response)
         bot.send_message(chat_id=update.message.chat_id, text=response)
 
     markov_handler = MessageHandler(filter_sabetsu, respond)
@@ -109,7 +109,7 @@ if len(sys.argv)==2 and sys.argv[1]=="-n":
         else:
             r = str(r)
             response += ' ' + r
-    print response
+    print(response)
             
 else:
     print('USAGE: python markov.py [OPTION] [ARGUMENT]\n\nOptions:\n-l: learn a file\n-t: telegram\n-i: irc')
