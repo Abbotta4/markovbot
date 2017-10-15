@@ -2,7 +2,7 @@
 import random,sys,socket,re,psycopg2,json,logging
 from telegram.ext import Updater,MessageHandler,CommandHandler,Filters,BaseFilter
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s', level = logging.INFO)
 
 # PostgreSQL learn
 def learn(argfile, cursor):
@@ -11,7 +11,7 @@ def learn(argfile, cursor):
         print("%s has already been learned", argfile)
         return
     print ("learning %s", argfile)
-    b=open(argfile)
+    b = open(argfile)
     c = r'\[\d\d:\d\d:\d\d\] <.+> '
     for line in b:
         text = []
@@ -64,11 +64,11 @@ conn_string = "host='localhost' port=5432 dbname='testdb' user='postgres' passwo
 conn = psycopg2.connect(conn_string)
 cursor = conn.cursor()
     
-if len(sys.argv)==3 and sys.argv[1]=="-l":
+if len(sys.argv) == 3 and sys.argv[1] == "-l":
     learn(sys.argv[2], cursor)
     
-if len(sys.argv)==2 and sys.argv[1]=="-t":
-    updater = Updater(token='415135313:AAGEOslKHmSpANt_dUMRKL-SvT4Kkel12Rw')
+if len(sys.argv) == 2 and sys.argv[1] == "-t":
+    updater = Updater(token = '415135313:AAGEOslKHmSpANt_dUMRKL-SvT4Kkel12Rw')
     dispatcher = updater.dispatcher
 
     class FilterSabetsu(BaseFilter):
@@ -89,7 +89,7 @@ if len(sys.argv)==2 and sys.argv[1]=="-t":
                 r = str(r)
                 response += ' ' + r
         print(response)
-        bot.send_message(chat_id=update.message.chat_id, text=response)
+        bot.send_message(chat_id = update.message.chat_id, text = response)
 
     markov_handler = MessageHandler(filter_sabetsu, respond)
     dispatcher.add_handler(markov_handler)
@@ -97,7 +97,7 @@ if len(sys.argv)==2 and sys.argv[1]=="-t":
     updater.start_polling()
     updater.idle()
 
-if len(sys.argv)==2 and sys.argv[1]=="-n":
+if len(sys.argv)==2 and sys.argv[1] == "-n":
     cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
     r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
     response = r
