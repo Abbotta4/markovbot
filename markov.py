@@ -126,6 +126,6 @@ if len(sys.argv)==2 and sys.argv[1] == "-n":
     print(response)
             
 else:
-    print('USAGE: python markov.py [OPTION] [ARGUMENT]\n\nOptions:\n-l: learn a file\n-t: telegram\n-i: irc')
+    print('USAGE: python markov.py [OPTION] ([FILE])\n\nOptions:\n-l: Learn a file. Takes one argument FILE to learn.\n-t: Starts the Telegram bot configured in config.ini\n-n: Sends the output chain to stdout')
 
 conn.close()
