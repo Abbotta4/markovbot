@@ -96,53 +96,6 @@ if len(sys.argv)==2 and sys.argv[1]=="-t":
 
     updater.start_polling()
     updater.idle()
-    
-if len(sys.argv)==2 and sys.argv[1]=="-i":
-    irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
-    def send(chan, msg):
-        irc.send("PRIVMSG " + chan + " :" + msg + "\n")
-        
-    def connect(server, channel, botnick):
-        #defines the socket
-        print "connecting to: " + server
-        irc.connect((server, 6667)) #connects to the server
-        irc.send("USER " + botnick + " " + botnick + " " + botnick + " :This is a fun bot!\n") #user authentication
-        irc.send("NICK " + botnick + "\n")
-        irc.send("JOIN " + channel + "\n") #join the chan
-    
-    def get_text():
-        text=irc.recv(2048)  #receive the text
-        if text.find('PING') != -1:
-            irc.send('PONG ' + text.split() [1] + '\n')
-        return text
-
-    channel = "#anoo"
-    server = "chat.freenode.net"
-    nickname = "leebow"
-
-    connect(server, channel, nickname)
-
-    text = "";
-    while text != ":Abbott!~Abbott@unaffiliated/abbott PRIVMSG leebow :go away\r\n":
-        text = get_text()
-        if text:
-            print text
-        
-        if "PRIVMSG" in text and "Abbott" in text:
-            cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
-            r = weighted_choice(dict((k[0], k[1]) for k in cursor.fetchall()))
-            response = r
-            while True:
-                cursor.execute("""SELECT next FROM markov WHERE word = %s""", (r, ))
-                r = weighted_choice(cursor.fetchall()[0][0])
-                if str(r) == 'null':
-                    break
-                else:
-                    r = str(r)
-                    response += ' ' + r
-            print response
-            send("Abbott", response)
 
 if len(sys.argv)==2 and sys.argv[1]=="-n":
     cursor.execute("""SELECT word, freq FROM markov WHERE freq > 0""")
